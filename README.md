@@ -1,49 +1,77 @@
 ## Overview
 
-## install gcloud
+This repository contains a simple Python client for sending a prompt to the Ollama-compatible generate endpoint exposed through the Cloud Run service `gemmademo`.
 
-First, install gcloud using curl.
+## Setup
+
+Install the Google Cloud CLI if `gcloud` is not available.
 
 ```bash
-curl -sSL https://sdk.cloud.google.com | bash && exec -l $SHELL && gcloud init
+curl -sSL https://sdk.cloud.google.com | bash
+exec -l $SHELL
+gcloud init
 ```
 
-Then, log in with gcloud.
+Authenticate with Google Cloud.
 
 ```bash
 gcloud auth login
+gcloud auth application-default login
 ```
 
-You can find your Project ID on the Google Cloud Welcome page.
-※Check [welcome google cloud](https://console.cloud.google.com/welcome?)
+Set the active Google Cloud project.
 
-The correct command is:
 ```bash
 gcloud config set project PROJECT_ID
 ```
 
-For example, if your project ID is `my-awesome-project-123`, you would run:
+You can confirm the current project with:
+
 ```bash
-gcloud config set project my-awesome-project-123
+gcloud config list --format='value(core.project)'
 ```
 
-This command sets the active Google Cloud project for all subsequent `gcloud` commands.
-
-Next, you will set up Application Default Credentials (ADC).
+## Set Region
 
 ```bash
-gcloud auth application-default login
+gcloud config set run/region europe-west1
 ```
 
-This completes the setup. / The setup is now complete.
+## Start the proxy
 
-### Google Cloud Project ID
-
-If you are not using a `.env` file in this project, set the following environment variables directly in your terminal before running the Slack app.
-If you are using a `.env` file, you can skip this step as the `PROJECT_ID` will be set automatically when you run the app.
-
-Set the `PROJECT_ID` environment variables.
+Expose the Cloud Run service locally on port 9090.
 
 ```bash
-export PROJECT_ID=`gcloud config list --format 'value(core.project)'` && echo $PROJECT_ID
+gcloud run services proxy gemmademo --port=9090
+```
+
+After this starts successfully, the local endpoint below becomes available.
+
+```text
+http://localhost:9090/api/generate
+```
+
+## Call the endpoint with curl
+
+```bash
+curl http://localhost:9090/api/generate -d '{
+	"model": "gemma3:4b",
+	"prompt": "Why is the sky blue?"
+}'
+```
+
+The response is streamed line by line.
+
+## Call the endpoint with Python
+
+Run the included script.
+
+```bash
+python3 generate_stream.py
+```
+
+You can also pass a custom prompt, model, or endpoint URL.
+
+```bash
+python3 generate_stream.py "Why is the sky blue?" --model gemma3:4b --url http://localhost:9090/api/generate
 ```
